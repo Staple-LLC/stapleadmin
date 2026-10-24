@@ -1,0 +1,122 @@
+.invoice-reconciliation {
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.invoice-reconciliation h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+.invoice-reconciliation h4 {
+  font-weight: 600;
+  margin-bottom: 0.6rem;
+}
+.invoice-reconciliation p {
+  margin: 0.75rem 0;
+  font-size: 0.875rem;
+}
+.reconciliation-balances {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.reconciliation-balances dt {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.reconciliation-balances dd {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.reconciliation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.85rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.reconciliation-row > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.reconciliation-row strong {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.reconciliation-row span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted-foreground);
+  margin-top: 0.2rem;
+}
+.reconciliation-row button {
+  flex-shrink: 0;
+}
+.reconciliation-picker {
+  margin-top: 1rem;
+}
+.reconciliation-picker summary {
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 600;
+}
+.invoice-reconciliation label {
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  margin: 1rem 0;
+}
+.invoice-reconciliation input {
+  width: 100%;
+}
+.reconciliation-confirm {
+  padding: 1rem;
+  margin-top: 1rem;
+  background: var(--muted);
+  border-radius: 0.7rem;
+}
+.reconciliation-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.8rem;
+}
+.reconciliation-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 0.6rem 0;
+}
+.reconciliation-pagination > div {
+  display: flex;
+}
+.reconciliation-help a {
+  color: var(--primary);
+  text-decoration: underline;
+}
+.reconciliation-notice {
+  color: var(--primary);
+}
+@media (max-width: 480px) {
+  .reconciliation-row {
+    flex-wrap: wrap;
+  }
+  .reconciliation-balances dd {
+    font-size: 1rem;
+  }
+}
+
+.reconciliation-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
