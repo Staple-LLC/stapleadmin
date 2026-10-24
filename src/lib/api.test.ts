@@ -1,4 +1,4 @@
-// @vitest-environment jsdom
+// @vitest-environment jsdom.s
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { api } from './api';
 
