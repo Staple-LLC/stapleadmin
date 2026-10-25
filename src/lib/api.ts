@@ -71,6 +71,7 @@ export interface WebsiteInput {
   notes: string;
 }
 export interface ExpenseInput {
+  projectId?: string | null;
   vendor: string;
   description: string;
   amount: string;
@@ -336,12 +337,62 @@ function resource<T, I>(name: string) {
       request<void>(`/${name}/${id}`, { method: 'DELETE' }),
   };
 }
+export interface ProjectInput {
+  customerId: string;
+  name: string;
+  currency: string;
+  agreedValue: string;
+  costBudget: string | null;
+  status: 'ACTIVE' | 'COMPLETED' | 'ARCHIVED';
+  notes: string;
+  version: number;
+}
+export interface Project extends ProjectInput {
+  id: string;
+  customerName: string;
+  directCosts: string;
+  margin: string;
+  budgetRemaining: string | null;
+  costCount: number;
+  createdAt: string;
+}
+export interface ProjectCost {
+  id: string;
+  date: string;
+  description: string;
+  category: string;
+  amount: string;
+  currency: string;
+  projectId: string | null;
+  projectName: string | null;
+}
+export interface ProjectSummary {
+  currency: string;
+  agreedValue: string;
+  directCosts: string;
+  margin: string;
+  sharedExpenses: string;
+  unassignedExpenses: string;
+}
 export const api = {
+  projects: {
+    ...resource<Project, ProjectInput>('projects'),
+    summary: (currency: string) =>
+      request<ProjectSummary>(
+        `/projects/summary?${new URLSearchParams({ currency })}`,
+      ),
+    costs: (id: string, params: URLSearchParams) =>
+      request<Page<ProjectCost>>(`/projects/${id}/costs?${params}`),
+    assign: (id: string, expenseId: string) =>
+      request<void>(`/projects/${id}/costs/${expenseId}`, { method: 'PUT' }),
+    unassign: (id: string, expenseId: string) =>
+      request<void>(`/projects/${id}/costs/${expenseId}`, { method: 'DELETE' }),
+  },
   billing: {
     receipt: async (
       sessionId: string,
     ): Promise<{
-      status: 'READY' | 'PENDING' | 'NO_PAYMENT';
+      status: 'READY' | 'PENDING' | 'NO_PAYMENT' | 'NO_CHARGE';
       url: string | null;
     }> => {
       const response = await fetch(

@@ -1638,6 +1638,12 @@ export function BillingReturn() {
               >
                 <ExternalLink size={16} /> View receipt
               </a>
+            ) : receipt.data?.status === 'NO_CHARGE' ? (
+              <p>
+                Stripe completed this invoice without collecting a card payment.
+                No card receipt was generated. An amount below Stripe’s minimum
+                may be carried forward to a later invoice.
+              </p>
             ) : receipt.data?.status === 'NO_PAYMENT' ? (
               <p>
                 No payment was due at checkout. A receipt will be available

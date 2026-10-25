@@ -502,3 +502,16 @@ it('loads additional customer choices in pages', async () => {
     ).toBe(true),
   );
 });
+
+it('explains a completed invoice with no card charge instead of waiting forever for a receipt', async () => {
+  mock.receipt.mockResolvedValue({ status: 'NO_CHARGE', url: null });
+  mount(
+    '/billing-return?status=complete&session_id=cs_small',
+    <BillingReturn />,
+  );
+  await screen.findByText(/without collecting a card payment/);
+  expect(screen.queryByRole('link', { name: 'View receipt' })).toBeNull();
+  expect(
+    screen.queryByRole('button', { name: 'Check for receipt' }),
+  ).toBeNull();
+});

@@ -1,3 +1,4 @@
+import { ProjectSelect } from './components/project-select';
 import { BillingCustomerSelect } from './components/billing-common';
 import { useDebouncedValue } from './lib/use-debounced-value';
 import { Select, SelectItem } from './components/ui/select';
@@ -71,11 +72,13 @@ const routeModules = {
   'financial-records': () => import('./components/financial-workbook'),
   dashboard: () => import('./components/financial-dashboard'),
   billing: () => import('./components/billing'),
+  projects: () => import('./components/projects'),
   domains: () => import('./components/billing-domains'),
 };
 const FinancialWorkbookPage = lazy(routeModules['financial-records']);
 const FinancialDashboard = lazy(routeModules.dashboard);
 const BillingPage = lazy(routeModules.billing);
+const ProjectsPage = lazy(routeModules.projects);
 const BillingReturn = lazy(() =>
   routeModules.billing().then((module) => ({ default: module.BillingReturn })),
 );
@@ -101,6 +104,7 @@ const access: Record<string, Role[]> = {
   invoices: ['OWNER', 'FINANCE'],
   billing: ['OWNER', 'FINANCE'],
   expenses: ['OWNER', 'FINANCE'],
+  projects: ['OWNER', 'FINANCE'],
 };
 const Auth = createContext<{ session: Session; logout: () => void }>(null!);
 const labels: Record<Section, string> = {
@@ -417,6 +421,7 @@ function Shell() {
     { id: 'customers', label: 'Customers', icon: Users },
     { id: 'leads', label: 'Leads', icon: TrendingUp },
     { id: 'websites', label: 'Websites', icon: Globe },
+    { id: 'projects', label: 'Projects', icon: FileSpreadsheet },
     { id: 'billing', label: 'Billing', icon: Receipt },
     { id: 'expenses', label: 'Expenses', icon: Wallet },
     { id: 'documents', label: 'Documents', icon: FileText },
@@ -523,6 +528,22 @@ function Shell() {
                   }
                 >
                   <FinancialWorkbookPage />
+                </Suspense>
+              </Guard>
+            }
+          />
+          <Route
+            path="/projects"
+            element={
+              <Guard feature="projects">
+                <Suspense
+                  fallback={
+                    <p className="page" role="status">
+                      Loading projects…
+                    </p>
+                  }
+                >
+                  <ProjectsPage />
                 </Suspense>
               </Guard>
             }
@@ -944,6 +965,7 @@ function Records({
                 onDone={() => {
                   setEditing(undefined);
                   void cache.invalidateQueries({ queryKey: [section] });
+                  void cache.invalidateQueries({ queryKey: ['projects'] });
                   void cache.invalidateQueries({ queryKey: ['dashboard'] });
                   void cache.invalidateQueries({ queryKey: ['tracker'] });
                   void cache.invalidateQueries({
@@ -1327,6 +1349,7 @@ function RecordForm({
           'currency',
           'customerId',
           'cmsEnabled',
+          'projectId',
         ]
           .filter((k) => k in data)
           .map((k) => [k, data[k]]),
@@ -1436,13 +1459,23 @@ function RecordForm({
             <Select
               aria-label="Currency"
               value={String(data.currency)}
-              onValueChange={(nextValue) => set('currency', nextValue)}
+              onValueChange={(nextValue) => {
+                set('currency', nextValue);
+                if (section === 'expenses') set('projectId', null);
+              }}
             >
               {['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'AUD'].map((c) => (
                 <SelectItem key={c}>{c}</SelectItem>
               ))}
             </Select>
           </label>
+        )}
+        {section === 'expenses' && (
+          <ProjectSelect
+            currency={String(data.currency)}
+            value={String(data.projectId ?? '')}
+            onChange={(value) => set('projectId', value || null)}
+          />
         )}
         {section === 'websites' && (
           <label className="checkbox">

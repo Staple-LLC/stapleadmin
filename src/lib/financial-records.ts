@@ -18,6 +18,7 @@ export async function refreshFinancialRecords(cache: QueryClient) {
       'invoice-reconciliation',
       'documents',
       'billing',
+      'projects',
     ].map((key) => cache.invalidateQueries({ queryKey: [key] })),
   );
 }
