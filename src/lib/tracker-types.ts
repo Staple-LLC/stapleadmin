@@ -50,6 +50,12 @@ export interface TrackerSummary {
 }
 
 export interface FinancialWorkbook {
+  transactionPage?: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+  };
   summary: TrackerSummary;
   transactions: TrackerTransaction[];
   categoryRows: {

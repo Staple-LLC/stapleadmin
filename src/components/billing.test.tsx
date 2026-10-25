@@ -476,3 +476,29 @@ it('does not load a receipt when checkout was cancelled', () => {
   );
   expect(mock.receipt).not.toHaveBeenCalled();
 });
+
+it('loads additional customer choices in pages', async () => {
+  mock.customers.mockImplementation(async (params: URLSearchParams) =>
+    params.get('page') === '1'
+      ? {
+          ...page([{ id: 'customer-2', businessName: 'Second customer' }]),
+          page: 1,
+          totalPages: 2,
+          totalElements: 21,
+        }
+      : { ...page([customer]), page: 0, totalPages: 2, totalElements: 21 },
+  );
+  mount();
+  await screen.findByText('Acme website');
+  fireEvent.click(screen.getByRole('button', { name: /Add.*service/ }));
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Load more customers' }),
+  );
+  await waitFor(() =>
+    expect(
+      mock.customers.mock.calls.some(
+        ([params]) => params.get('page') === '1' && params.get('size') === '20',
+      ),
+    ).toBe(true),
+  );
+});

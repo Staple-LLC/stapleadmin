@@ -1,3 +1,4 @@
+import { useDebouncedValue } from '../lib/use-debounced-value';
 import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
@@ -252,17 +253,26 @@ function Services({
 }) {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState('createdAt,desc');
   const [adding, setAdding] = useState(false);
   const [showDomains, setShowDomains] = useState(false);
   const [selected, setSelected] = useState<BillingService | null>(null);
   const query = useQuery({
-    queryKey: ['billing', 'services', page, search, status, sort, customerId],
+    queryKey: [
+      'billing',
+      'services',
+      page,
+      debouncedSearch,
+      status,
+      sort,
+      customerId,
+    ],
     refetchOnWindowFocus: true,
     queryFn: () =>
       api.billing.services.list(
-        billingParams(page, search, {
+        billingParams(page, debouncedSearch, {
           sort,
           ...(status ? { status } : {}),
           ...(customerId ? { customerId } : {}),
@@ -1105,13 +1115,21 @@ function ServiceDetails({
 function Payments({ customerId }: { customerId: string }) {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [status, setStatus] = useState('');
   const query = useQuery({
-    queryKey: ['billing', 'payments', customerId, page, search, status],
+    queryKey: [
+      'billing',
+      'payments',
+      customerId,
+      page,
+      debouncedSearch,
+      status,
+    ],
     refetchOnWindowFocus: true,
     queryFn: () =>
       api.billing.payments.list(
-        billingParams(page, search, {
+        billingParams(page, debouncedSearch, {
           ...(customerId ? { customerId } : {}),
           ...(status ? { status } : {}),
         }),
@@ -1247,13 +1265,14 @@ function Payments({ customerId }: { customerId: string }) {
 function Plans() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [active, setActive] = useState('');
   const [editing, setEditing] = useState<BillingPlan | null | undefined>();
   const query = useQuery({
-    queryKey: ['billing', 'plans', page, search, active],
+    queryKey: ['billing', 'plans', page, debouncedSearch, active],
     queryFn: () =>
       api.billing.plans.list(
-        billingParams(page, search, {
+        billingParams(page, debouncedSearch, {
           ...(active ? { active } : {}),
           sort: 'name,asc',
         }),

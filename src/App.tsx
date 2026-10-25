@@ -1,3 +1,5 @@
+import { BillingCustomerSelect } from './components/billing-common';
+import { useDebouncedValue } from './lib/use-debounced-value';
 import { Select, SelectItem } from './components/ui/select';
 import {
   createContext,
@@ -65,25 +67,28 @@ import {
   DialogTitle,
   DialogDescription,
 } from './components/ui/dialog';
-const FinancialWorkbookPage = lazy(
-  () => import('./components/financial-workbook'),
-);
-
-const FinancialDashboard = lazy(
-  () => import('./components/financial-dashboard'),
-);
-
-const BillingPage = lazy(() => import('./components/billing'));
+const routeModules = {
+  'financial-records': () => import('./components/financial-workbook'),
+  dashboard: () => import('./components/financial-dashboard'),
+  billing: () => import('./components/billing'),
+  domains: () => import('./components/billing-domains'),
+};
+const FinancialWorkbookPage = lazy(routeModules['financial-records']);
+const FinancialDashboard = lazy(routeModules.dashboard);
+const BillingPage = lazy(routeModules.billing);
 const BillingReturn = lazy(() =>
-  import('./components/billing').then((module) => ({
-    default: module.BillingReturn,
-  })),
+  routeModules.billing().then((module) => ({ default: module.BillingReturn })),
 );
 const BillingDomains = lazy(() =>
-  import('./components/billing-domains').then((module) => ({
-    default: module.BillingDomains,
-  })),
+  routeModules.domains().then((module) => ({ default: module.BillingDomains })),
 );
+function preloadRoute(id: string) {
+  const load = routeModules[id as keyof typeof routeModules];
+  if (load)
+    void load().catch(() => {
+      /* Navigation can retry after a transient download failure. */
+    });
+}
 
 type Section = 'customers' | 'leads' | 'websites' | 'invoices' | 'expenses';
 const access: Record<string, Role[]> = {
@@ -442,7 +447,13 @@ function Shell() {
           {links
             .filter((l) => access[l.id].includes(session.user.role!))
             .map(({ id, label, icon: Icon }) => (
-              <NavLink key={id} to={`/${id}`} onClick={() => setOpen(false)}>
+              <NavLink
+                key={id}
+                to={`/${id}`}
+                onMouseEnter={() => preloadRoute(id)}
+                onFocus={() => preloadRoute(id)}
+                onClick={() => setOpen(false)}
+              >
                 <Icon size={18} />
                 {label}
               </NavLink>
@@ -609,6 +620,7 @@ function Records({
   const role = useRole();
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [status, setStatus] = useState('');
   const [sort, setSort] = useState('createdAt,desc');
   const [editing, setEditing] = useState<Row | null | undefined>();
@@ -626,14 +638,14 @@ function Records({
       section === 'expenses'
         ? sort.replace('createdAt', 'transactionDate')
         : sort,
-    q: search,
+    q: debouncedSearch,
     ...(customerId ? { customerId } : {}),
     ...(status
       ? { [section === 'expenses' ? 'source' : 'status']: status }
       : {}),
   });
   const query = useQuery<Page<Row>>({
-    queryKey: [section, customerId, page, search, status, sort],
+    queryKey: [section, customerId, page, debouncedSearch, status, sort],
     queryFn: () => api[section].list(params),
   });
   async function remove() {
@@ -1257,54 +1269,13 @@ function CustomerSelect({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const [q, setQ] = useState('');
-  const customers = useQuery({
-    queryKey: ['customer-picker', q],
-    queryFn: () =>
-      api.customers.list(
-        new URLSearchParams({ size: '100', q, sort: 'businessName,asc' }),
-      ),
-  });
   return (
     <div className="col-span-full">
-      <label>
-        Find customer
-        <input
-          value={q}
-          placeholder="Search business name…"
-          onChange={(e) => setQ(e.target.value)}
-        />
-      </label>
-      <label>
-        Customer
-        <Select
-          aria-label="Customer"
-          required
-          value={value}
-          onValueChange={(nextValue) => onChange(nextValue)}
-        >
-          <SelectItem value="">Select a customer</SelectItem>
-          {value && !customers.data?.content.some((c) => c.id === value) && (
-            <SelectItem value={value}>
-              Current customer ({value.slice(0, 8)})
-            </SelectItem>
-          )}
-          {customers.data?.content.map((c) => (
-            <SelectItem key={c.id} value={c.id}>
-              {c.businessName}
-            </SelectItem>
-          ))}
-        </Select>
-      </label>
-      <ErrorMessage error={customers.error} />
-      {customers.data?.totalElements === 0 && (
-        <small className="muted">
-          No customers found. Add a customer first.
-        </small>
-      )}
+      <BillingCustomerSelect value={value} onChange={onChange} />
     </div>
   );
 }
+
 function RecordForm({
   section,
   row,

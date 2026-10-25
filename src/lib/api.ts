@@ -444,9 +444,11 @@ export const api = {
     year: string,
     currency = 'MYR',
     includeTestPayments = false,
+    page = 0,
+    q = '',
   ) =>
     request<FinancialWorkbook>(
-      `/dashboard/tracker/workbook?${new URLSearchParams({ currency, ...(year ? { year } : {}), ...(includeTestPayments ? { includeTestPayments: 'true' } : {}) })}`,
+      `/dashboard/tracker/workbook?${new URLSearchParams({ page: String(page), size: '50', q, currency, ...(year ? { year } : {}), ...(includeTestPayments ? { includeTestPayments: 'true' } : {}) })}`,
     ),
   financialRecords: {
     create: (data: FinancialTransactionInput) =>

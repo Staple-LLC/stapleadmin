@@ -128,3 +128,57 @@ it('saves an edited cell with the original row version and retains failed drafts
     expect(screen.queryByLabelText('Edit cell value')).toBeNull(),
   );
 });
+
+it('uses server page metadata and requests another page instead of slicing the downloaded rows', () => {
+  const onPageChange = vi.fn();
+  const onSearchChange = vi.fn();
+  const data = {
+    ...workbook,
+    transactionPage: {
+      content: workbook.transactions,
+      page: 1,
+      size: 50,
+      totalElements: 125,
+      totalPages: 3,
+    },
+  };
+  render(
+    <WorkbookGrid
+      sheet={buildFinancialSheets(data)[0]}
+      remote={{
+        ...data.transactionPage,
+        search: '',
+        onPageChange,
+        onSearchChange,
+      }}
+    />,
+  );
+  expect(screen.getByText('51–100 of 125 transactions')).toBeTruthy();
+  expect(screen.getByRole('gridcell', { name: /^D54:/ })).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Next sheet page' }));
+  expect(onPageChange).toHaveBeenCalledWith(2);
+  fireEvent.change(screen.getByLabelText('Filter sheet rows'), {
+    target: { value: 'Website' },
+  });
+  expect(onSearchChange).toHaveBeenCalledWith('Website');
+});
+
+it('requests the complete matching sheet for export rather than exporting only the visible page', async () => {
+  const onExport = vi.fn().mockResolvedValue(buildFinancialSheets(workbook)[0]);
+  const createObjectURL = vi.fn().mockReturnValue('blob:csv-fixture');
+  vi.stubGlobal('URL', { createObjectURL, revokeObjectURL: vi.fn() });
+  const click = vi
+    .spyOn(HTMLAnchorElement.prototype, 'click')
+    .mockImplementation(() => {});
+  render(
+    <WorkbookGrid
+      sheet={buildFinancialSheets(workbook)[0]}
+      onExport={onExport}
+    />,
+  );
+  fireEvent.click(screen.getByRole('button', { name: 'Export CSV' }));
+  await waitFor(() => expect(createObjectURL).toHaveBeenCalledTimes(1));
+  expect(onExport).toHaveBeenCalledTimes(1);
+  expect(screen.getByText('CSV exported')).toBeTruthy();
+  click.mockRestore();
+});

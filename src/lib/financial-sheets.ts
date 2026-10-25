@@ -111,7 +111,10 @@ export function buildFinancialSheets(
       ),
       ...datedTransactions.map((t, index) => ({
         ...row(
-          index + 4,
+          index +
+            4 +
+            (workbook.transactionPage?.page ?? 0) *
+              (workbook.transactionPage?.size ?? 50),
           [
             text(t.date),
             text(t.type === 'INCOME' ? 'Income' : 'Expense'),

@@ -1,3 +1,4 @@
+import { useDebouncedValue } from '../lib/use-debounced-value';
 import {
   FinancialPreviewToggle,
   useFinancialPreview,
@@ -42,20 +43,52 @@ type Position = { row: number; col: number };
 export default function FinancialWorkbookPage() {
   const [includeTestPayments] = useFinancialPreview();
   const [year, setYear] = useState('');
+  const [transactionPage, setTransactionPage] = useState(0);
+  const [transactionSearch, setTransactionSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(transactionSearch);
   const [currency, setCurrency] = useState('MYR');
+  const scope = `${year}-${currency}-${includeTestPayments}-${debouncedSearch}`;
+  const [pageScope, setPageScope] = useState(scope);
+  const currentPage = scope === pageScope ? transactionPage : 0;
+  function changePage(page: number) {
+    setPageScope(scope);
+    setTransactionPage(page);
+  }
+
   const [editor, setEditor] = useState<RecordEditorState | null>(null);
   const [savedMessage, setSavedMessage] = useState('');
   const cache = useQueryClient();
   const [years, setYears] = useState<number[]>([]);
   const [tab, setTab] = useState('transactions');
   const query = useQuery({
-    queryKey: ['financial-workbook', year, currency, includeTestPayments],
+    queryKey: [
+      'financial-workbook',
+      year,
+      currency,
+      includeTestPayments,
+      currentPage,
+      debouncedSearch,
+    ],
     refetchInterval: 15000,
-    queryFn: () => api.financialWorkbook(year, currency, includeTestPayments),
+    queryFn: () =>
+      api.financialWorkbook(
+        year,
+        currency,
+        includeTestPayments,
+        currentPage,
+        debouncedSearch,
+      ),
   });
   useEffect(() => {
     if (query.data) setYears(query.data.summary.years);
   }, [query.data]);
+  useEffect(() => {
+    const pages = query.data?.transactionPage?.totalPages;
+    if (pages !== undefined && currentPage >= Math.max(1, pages)) {
+      setPageScope(scope);
+      setTransactionPage(Math.max(0, pages - 1));
+    }
+  }, [query.data, currentPage, scope]);
   const sheets = query.data
     ? buildFinancialSheets(query.data, includeTestPayments)
     : [];
@@ -188,6 +221,46 @@ export default function FinancialWorkbookPage() {
           <WorkbookGrid
             key={`${year}-${currency}-${includeTestPayments}-${sheet.id}`}
             sheet={sheet}
+            remote={
+              sheet.id === 'transactions' && query.data.transactionPage
+                ? {
+                    ...query.data.transactionPage,
+                    search: transactionSearch,
+                    onSearchChange: setTransactionSearch,
+                    onPageChange: changePage,
+                  }
+                : undefined
+            }
+            onExport={
+              sheet.id === 'transactions'
+                ? async () => {
+                    const all = [];
+                    for (let page = 0; ; page++) {
+                      const result = await api.trackerTransactions(
+                        new URLSearchParams({
+                          currency,
+                          ...(year ? { year } : {}),
+                          includeTestPayments: String(includeTestPayments),
+                          page: String(page),
+                          size: '100',
+                          q: debouncedSearch,
+                          sort: 'date,asc',
+                        }),
+                      );
+                      all.push(...result.content);
+                      if (page + 1 >= result.totalPages) break;
+                    }
+                    return buildFinancialSheets(
+                      {
+                        ...query.data,
+                        transactions: all,
+                        transactionPage: undefined,
+                      },
+                      includeTestPayments,
+                    )[0];
+                  }
+                : undefined
+            }
             onCommit={commit}
             onEditRow={editRow}
           />
@@ -243,8 +316,20 @@ export function WorkbookGrid({
   sheet,
   onCommit,
   onEditRow,
+  remote,
+  onExport,
 }: {
   sheet: FinancialSheet;
+  remote?: {
+    page: number;
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    search: string;
+    onSearchChange: (value: string) => void;
+    onPageChange: (page: number) => void;
+  };
+  onExport?: () => Promise<FinancialSheet>;
   onCommit?: (row: SheetRow, field: string, value: string) => Promise<void>;
   onEditRow?: (row: SheetRow) => void;
 }) {
@@ -326,18 +411,25 @@ export function WorkbookGrid({
   }
 
   const ref = useRef<HTMLDivElement>(null);
-  const rows = search.trim()
-    ? sheet.rows.filter(
-        (r) =>
-          r.tone ||
-          r.cells.some((c) =>
-            c.raw.toLowerCase().includes(search.toLowerCase()),
-          ),
-      )
-    : sheet.rows;
+  const rows =
+    !remote && search.trim()
+      ? sheet.rows.filter(
+          (r) =>
+            r.tone ||
+            r.cells.some((c) =>
+              c.raw.toLowerCase().includes(search.toLowerCase()),
+            ),
+        )
+      : sheet.rows;
   const pageSize = 100;
-  const visible = rows.slice(page * pageSize, (page + 1) * pageSize);
-  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const visible = remote
+    ? rows
+    : rows.slice(page * pageSize, (page + 1) * pageSize);
+  const pages = Math.max(
+    1,
+    remote?.totalPages ?? Math.ceil(rows.length / pageSize),
+  );
+  const displayPage = remote?.page ?? page;
   const chosen = rows[active.row]?.cells[active.col];
   useEffect(() => {
     if (active.row >= rows.length) {
@@ -447,21 +539,34 @@ export function WorkbookGrid({
       true,
     );
   }
-  function exportCsv() {
-    const url = URL.createObjectURL(
-      new Blob([sheetAsCsv(sheet)], { type: 'text/csv;charset=utf-8;' }),
-    );
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `StapleOS_${sheet.name.replaceAll(/[^a-zA-Z0-9]+/g, '_')}.csv`;
-    document.body.append(link);
-    link.click();
-    link.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  async function exportCsv() {
+    setMessage('Preparing CSV…');
+    try {
+      const exportSheet = onExport ? await onExport() : sheet;
+      const url = URL.createObjectURL(
+        new Blob([sheetAsCsv(exportSheet)], {
+          type: 'text/csv;charset=utf-8;',
+        }),
+      );
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `StapleOS_${sheet.name.replaceAll(/[^a-zA-Z0-9]+/g, '_')}.csv`;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setMessage('CSV exported');
+    } catch {
+      setMessage('Could not export CSV. Please retry.');
+    }
   }
-  const showing = visible.length
-    ? `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, rows.length)} of ${rows.length} rows`
-    : 'No matching rows';
+  const showing = remote
+    ? remote.totalElements
+      ? `${remote.page * remote.size + 1}–${Math.min((remote.page + 1) * remote.size, remote.totalElements)} of ${remote.totalElements} transactions`
+      : 'No matching transactions'
+    : visible.length
+      ? `${page * pageSize + 1}–${Math.min((page + 1) * pageSize, rows.length)} of ${rows.length} rows`
+      : 'No matching rows';
   return (
     <section
       className="workbook-shell"
@@ -487,10 +592,11 @@ export function WorkbookGrid({
             <input
               aria-label="Filter sheet rows"
               placeholder="Filter rows…"
-              value={search}
+              value={remote?.search ?? search}
               maxLength={200}
               onChange={(event) => {
-                setSearch(event.target.value);
+                if (remote) remote.onSearchChange(event.target.value);
+                else setSearch(event.target.value);
                 setPage(0);
                 setActive({ row: 0, col: 0 });
                 setAnchor({ row: 0, col: 0 });
@@ -603,7 +709,7 @@ export function WorkbookGrid({
           </thead>
           <tbody>
             {visible.map((r, offset) => {
-              const index = page * pageSize + offset;
+              const index = (remote ? 0 : page * pageSize) + offset;
               return (
                 <tr key={r.number} className={r.tone ? `tone-${r.tone}` : ''}>
                   <th scope="row" className="sheet-row-number">
@@ -730,8 +836,14 @@ export function WorkbookGrid({
             variant="ghost"
             size="icon"
             aria-label="Previous sheet page"
-            disabled={page === 0}
+            disabled={displayPage === 0}
             onClick={() => {
+              if (remote) {
+                remote.onPageChange(remote.page - 1);
+                setActive({ row: 0, col: 0 });
+                setAnchor({ row: 0, col: 0 });
+                return;
+              }
               setPage((p) => p - 1);
               setActive({ row: (page - 1) * pageSize, col: 0 });
               setAnchor({ row: (page - 1) * pageSize, col: 0 });
@@ -740,14 +852,20 @@ export function WorkbookGrid({
             <ChevronLeft size={15} />
           </Button>
           <span>
-            {page + 1} / {pages}
+            {displayPage + 1} / {pages}
           </span>
           <Button
             variant="ghost"
             size="icon"
             aria-label="Next sheet page"
-            disabled={page + 1 >= pages}
+            disabled={displayPage + 1 >= pages}
             onClick={() => {
+              if (remote) {
+                remote.onPageChange(remote.page + 1);
+                setActive({ row: 0, col: 0 });
+                setAnchor({ row: 0, col: 0 });
+                return;
+              }
               setPage((p) => p + 1);
               setActive({ row: (page + 1) * pageSize, col: 0 });
               setAnchor({ row: (page + 1) * pageSize, col: 0 });

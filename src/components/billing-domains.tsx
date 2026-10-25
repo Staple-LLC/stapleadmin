@@ -1,3 +1,4 @@
+import { useDebouncedValue } from '../lib/use-debounced-value';
 import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
@@ -37,6 +38,7 @@ export function BillingDomains({
 }) {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [renewalStatus, setRenewalStatus] = useState('');
   const [editing, setEditing] = useState<BillingDomain | null | undefined>();
   const query = useQuery({
@@ -46,12 +48,12 @@ export function BillingDomains({
       websiteId,
       customerId,
       page,
-      search,
+      debouncedSearch,
       renewalStatus,
     ],
     queryFn: () =>
       api.billing.domains.list(
-        billingParams(page, search, {
+        billingParams(page, debouncedSearch, {
           ...(customerId ? { customerId } : {}),
           ...(websiteId ? { websiteId } : {}),
           ...(renewalStatus ? { renewalStatus } : {}),

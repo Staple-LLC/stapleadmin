@@ -1,3 +1,4 @@
+import { useDebouncedValue } from '../lib/use-debounced-value';
 import { Select, SelectItem } from './ui/select';
 import { useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -63,6 +64,7 @@ export function DocumentFiles({
   const [kind, setKind] = useState<'INVOICE' | 'RECEIPT'>(defaultKind);
   const [filter, setFilter] = useState('');
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search);
   const [page, setPage] = useState(0);
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -80,7 +82,7 @@ export function DocumentFiles({
   const params = new URLSearchParams({
     page: String(page),
     size: target ? '10' : '20',
-    q: search,
+    q: debouncedSearch,
     kind: filter,
     ...(target ? { targetType: target.type, targetId: target.id } : {}),
   });

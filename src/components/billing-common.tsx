@@ -1,7 +1,8 @@
+import { useDebouncedValue } from '../lib/use-debounced-value';
 import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { api, ApiError } from '../lib/api';
 import type { Page } from '../lib/api';
@@ -113,13 +114,18 @@ export function BillingCustomerSelect({
   disabled?: boolean;
 }) {
   const [search, setSearch] = useState('');
-  const customers = useQuery({
-    queryKey: ['billing', 'customer-options', search],
-    queryFn: () =>
+  const debouncedSearch = useDebouncedValue(search);
+  const customers = useInfiniteQuery({
+    queryKey: ['billing', 'customer-options', debouncedSearch],
+    initialPageParam: 0,
+    getNextPageParam: (last: Awaited<ReturnType<typeof api.customers.list>>) =>
+      last.page + 1 < last.totalPages ? last.page + 1 : undefined,
+    queryFn: ({ pageParam }) =>
       api.customers.list(
         new URLSearchParams({
-          q: search,
-          size: '100',
+          q: debouncedSearch,
+          page: String(pageParam),
+          size: '20',
           sort: 'businessName,asc',
         }),
       ),
@@ -129,7 +135,7 @@ export function BillingCustomerSelect({
     queryFn: () => api.customers.get(value),
     enabled: Boolean(value),
   });
-  const rows = customers.data?.content ?? [];
+  const rows = customers.data?.pages.flatMap((page) => page.content) ?? [];
   return (
     <div className="billing-customer-picker">
       <label>
@@ -169,11 +175,17 @@ export function BillingCustomerSelect({
           {billingError(customers.error)}
         </p>
       )}
-      {(customers.data?.totalElements ?? 0) > rows.length && (
-        <p className="billing-help">
-          Showing the first 100 matches. Refine your search to find another
-          customer.
-        </p>
+      {customers.hasNextPage && (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled || customers.isFetchingNextPage}
+          onClick={() => void customers.fetchNextPage()}
+        >
+          {customers.isFetchingNextPage
+            ? 'Loading customers…'
+            : 'Load more customers'}
+        </Button>
       )}
     </div>
   );
