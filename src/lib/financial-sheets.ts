@@ -58,6 +58,7 @@ export function columnLetter(index: number): string {
 }
 export function buildFinancialSheets(
   workbook: FinancialWorkbook,
+  includeTestPayments = false,
 ): FinancialSheet[] {
   const { summary: data, transactions, categoryRows } = workbook;
   // Worksheet positions follow business dates; source rows remain on each record for provenance.
@@ -89,7 +90,7 @@ export function buildFinancialSheets(
         2,
         [
           text(
-            `${currency} · Live records · Saved changes update the dashboard`,
+            `${currency} · ${includeTestPayments ? 'SANDBOX PREVIEW' : 'Live records'} · Saved changes update the dashboard`,
           ),
         ],
         'note',

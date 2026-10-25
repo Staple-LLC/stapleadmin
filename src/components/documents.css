@@ -67,7 +67,7 @@
   flex-shrink: 0;
   font-size: 10px;
 }
-.document-kind select {
+.document-kind .select-trigger {
   font-size: 12px;
   padding: 8px 10px;
 }
@@ -121,7 +121,7 @@
   font-size: 12px;
   background: none;
 }
-.document-toolbar > select {
+.document-toolbar .select-trigger {
   border: 1px solid #e0e7df;
   border-radius: 5px;
   padding: 7px 10px;

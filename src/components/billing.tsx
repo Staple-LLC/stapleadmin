@@ -1,3 +1,4 @@
+import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -296,36 +297,38 @@ function Services({
               }}
             />
           </label>
-          <select
+          <Select
             aria-label="Service status"
             value={status}
-            onChange={(event) => {
-              setStatus(event.target.value);
+            onValueChange={(nextValue) => {
+              setStatus(nextValue);
               setPage(0);
             }}
           >
-            <option value="">All statuses</option>
+            <SelectItem value="">All statuses</SelectItem>
             {['PENDING', 'ACTIVE', 'PAST_DUE', 'COMPLETED', 'CANCELLED'].map(
               (value) => (
-                <option key={value} value={value}>
+                <SelectItem key={value} value={value}>
                   {titleCase(value)}
-                </option>
+                </SelectItem>
               ),
             )}
-          </select>
-          <select
+          </Select>
+          <Select
             aria-label="Sort customer services"
             value={sort}
-            onChange={(event) => {
-              setSort(event.target.value);
+            onValueChange={(nextValue) => {
+              setSort(nextValue);
               setPage(0);
             }}
           >
-            <option value="createdAt,desc">Newest first</option>
-            <option value="createdAt,asc">Oldest first</option>
-            <option value="name,asc">Service name</option>
-            <option value="nextBillingDate,asc">Next billing date</option>
-          </select>
+            <SelectItem value="createdAt,desc">Newest first</SelectItem>
+            <SelectItem value="createdAt,asc">Oldest first</SelectItem>
+            <SelectItem value="name,asc">Service name</SelectItem>
+            <SelectItem value="nextBillingDate,asc">
+              Next billing date
+            </SelectItem>
+          </Select>
         </div>
         <BillingQueryState
           pending={query.isPending}
@@ -557,23 +560,24 @@ function ServiceEditor({
             />
             <label>
               Plan
-              <select
+              <Select
+                aria-label="Plan"
                 required
                 value={planId}
                 disabled={plans.isPending}
-                onChange={(event) => choosePlan(event.target.value)}
+                onValueChange={(nextValue) => choosePlan(nextValue)}
               >
-                <option value="">Choose a plan</option>
+                <SelectItem value="">Choose a plan</SelectItem>
                 {plans.data?.content.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
+                  <SelectItem key={plan.id} value={plan.id}>
                     {plan.name} —{' '}
                     {plan.amount === null
                       ? 'quoted price'
                       : billingMoney(plan.amount, plan.currency)}{' '}
                     {cycle(plan.interval)}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+              </Select>
             </label>
             {plans.error && (
               <p className="error" role="alert">
@@ -616,19 +620,22 @@ function ServiceEditor({
                   <>
                     <label>
                       Domain
-                      <select
+                      <Select
+                        aria-label="Domain"
                         required
                         value={domainId}
-                        onChange={(event) => setDomainId(event.target.value)}
+                        onValueChange={(nextValue) => setDomainId(nextValue)}
                       >
-                        <option value="">Choose this customer’s domain</option>
+                        <SelectItem value="">
+                          Choose this customer’s domain
+                        </SelectItem>
                         {domains.data?.content.map((domain) => (
-                          <option key={domain.id} value={domain.id}>
+                          <SelectItem key={domain.id} value={domain.id}>
                             {domain.name} · expires{' '}
                             {billingDate(domain.expiresOn)}
-                          </option>
+                          </SelectItem>
                         ))}
-                      </select>
+                      </Select>
                     </label>
                     {domains.error && (
                       <p role="alert" className="error">
@@ -645,27 +652,27 @@ function ServiceEditor({
                 )}
                 <label>
                   How the customer pays
-                  <select
+                  <Select
+                    aria-label="How the customer pays"
                     value={collectionMode}
-                    onChange={(event) =>
+                    onValueChange={(nextValue) =>
                       setCollectionMode(
-                        event.target
-                          .value as BillingServiceInput['collectionMode'],
+                        nextValue as BillingServiceInput['collectionMode'],
                       )
                     }
                   >
                     {selectedPlan.interval !== 'ONCE' && (
-                      <option value="AUTO_CARD">
+                      <SelectItem value="AUTO_CARD">
                         Automatic card — {cycle(selectedPlan.interval)}
-                      </option>
+                      </SelectItem>
                     )}
-                    <option value="ONLINE">
+                    <SelectItem value="ONLINE">
                       Payment link — customer pays each time
-                    </option>
-                    <option value="MANUAL">
+                    </SelectItem>
+                    <SelectItem value="MANUAL">
                       Bank transfer — issue an invoice
-                    </option>
-                  </select>
+                    </SelectItem>
+                  </Select>
                 </label>
                 <p className="billing-help">
                   {collectionMode === 'AUTO_CARD'
@@ -1134,21 +1141,23 @@ function Payments({ customerId }: { customerId: string }) {
               }}
             />
           </label>
-          <select
+          <Select
             aria-label="Payment status"
             value={status}
-            onChange={(event) => {
-              setStatus(event.target.value);
+            onValueChange={(nextValue) => {
+              setStatus(nextValue);
               setPage(0);
             }}
           >
-            <option value="">All statuses</option>
-            <option value="SUCCEEDED">Succeeded</option>
-            <option value="FAILED">Failed</option>
-            <option value="PENDING">Pending</option>
-            <option value="REFUNDED">Refunded</option>
-            <option value="PARTIALLY_REFUNDED">Partially refunded</option>
-          </select>
+            <SelectItem value="">All statuses</SelectItem>
+            <SelectItem value="SUCCEEDED">Succeeded</SelectItem>
+            <SelectItem value="FAILED">Failed</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="REFUNDED">Refunded</SelectItem>
+            <SelectItem value="PARTIALLY_REFUNDED">
+              Partially refunded
+            </SelectItem>
+          </Select>
         </div>
         <BillingQueryState
           pending={query.isPending}
@@ -1279,18 +1288,18 @@ function Plans() {
               }}
             />
           </label>
-          <select
+          <Select
             aria-label="Plan availability"
             value={active}
-            onChange={(event) => {
-              setActive(event.target.value);
+            onValueChange={(nextValue) => {
+              setActive(nextValue);
               setPage(0);
             }}
           >
-            <option value="">All plans</option>
-            <option value="true">Active</option>
-            <option value="false">Archived</option>
-          </select>
+            <SelectItem value="">All plans</SelectItem>
+            <SelectItem value="true">Active</SelectItem>
+            <SelectItem value="false">Archived</SelectItem>
+          </Select>
         </div>
         <BillingQueryState
           pending={query.isPending}
@@ -1451,35 +1460,34 @@ function PlanEditor({
             <div className="form-grid">
               <label>
                 Service type
-                <select
+                <Select
+                  aria-label="Service type"
                   value={input.kind}
-                  onChange={(event) =>
-                    change(
-                      'kind',
-                      event.target.value as BillingPlanInput['kind'],
-                    )
+                  onValueChange={(nextValue) =>
+                    change('kind', nextValue as BillingPlanInput['kind'])
                   }
                 >
-                  <option value="WEBSITE">Website</option>
-                  <option value="DOMAIN">Domain</option>
-                  <option value="OTHER">Other service</option>
-                </select>
+                  <SelectItem value="WEBSITE">Website</SelectItem>
+                  <SelectItem value="DOMAIN">Domain</SelectItem>
+                  <SelectItem value="OTHER">Other service</SelectItem>
+                </Select>
               </label>
               <label>
                 Billing frequency
-                <select
+                <Select
+                  aria-label="Billing frequency"
                   value={input.interval}
-                  onChange={(event) =>
+                  onValueChange={(nextValue) =>
                     change(
                       'interval',
-                      event.target.value as BillingPlanInput['interval'],
+                      nextValue as BillingPlanInput['interval'],
                     )
                   }
                 >
-                  <option value="ONCE">One time</option>
-                  <option value="MONTH">Monthly</option>
-                  <option value="YEAR">Annually</option>
-                </select>
+                  <SelectItem value="ONCE">One time</SelectItem>
+                  <SelectItem value="MONTH">Monthly</SelectItem>
+                  <SelectItem value="YEAR">Annually</SelectItem>
+                </Select>
               </label>
             </div>
             <label className="billing-checkbox">
@@ -1507,14 +1515,15 @@ function PlanEditor({
               )}
               <label>
                 Currency
-                <select
+                <Select
+                  aria-label="Currency"
                   value={input.currency}
-                  onChange={(event) => change('currency', event.target.value)}
+                  onValueChange={(nextValue) => change('currency', nextValue)}
                 >
                   {currencies.map((currency) => (
-                    <option key={currency}>{currency}</option>
+                    <SelectItem key={currency}>{currency}</SelectItem>
                   ))}
-                </select>
+                </Select>
               </label>
             </div>
             <label className="billing-checkbox">

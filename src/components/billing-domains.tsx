@@ -1,3 +1,4 @@
+import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -87,21 +88,21 @@ export function BillingDomains({
               }}
             />
           </label>
-          <select
+          <Select
             aria-label="Domain renewal status"
             value={renewalStatus}
-            onChange={(event) => {
-              setRenewalStatus(event.target.value);
+            onValueChange={(nextValue) => {
+              setRenewalStatus(nextValue);
               setPage(0);
             }}
           >
-            <option value="">All renewal statuses</option>
+            <SelectItem value="">All renewal statuses</SelectItem>
             {Object.entries(renewalLabels).map(([value, label]) => (
-              <option key={value} value={value}>
+              <SelectItem key={value} value={value}>
                 {label}
-              </option>
+              </SelectItem>
             ))}
-          </select>
+          </Select>
         </div>
         <BillingQueryState
           pending={query.isPending}
@@ -304,21 +305,22 @@ function DomainEditor({
             </div>
             <label>
               Renewal arrangement
-              <select
+              <Select
+                aria-label="Renewal arrangement"
                 value={input.renewalStatus}
-                onChange={(event) =>
+                onValueChange={(nextValue) =>
                   change(
                     'renewalStatus',
-                    event.target.value as BillingDomainInput['renewalStatus'],
+                    nextValue as BillingDomainInput['renewalStatus'],
                   )
                 }
               >
                 {Object.entries(renewalLabels).map(([value, label]) => (
-                  <option key={value} value={value}>
+                  <SelectItem key={value} value={value}>
                     {label}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+              </Select>
             </label>
             <label>
               Notes

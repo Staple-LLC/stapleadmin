@@ -1,3 +1,4 @@
+import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -148,16 +149,17 @@ export function FinancialRecordEditor({
               </label>
               <label>
                 Currency
-                <select
+                <Select
+                  aria-label="Currency"
                   value={asset.currency}
-                  onChange={(e) =>
-                    setAsset({ ...asset, currency: e.target.value })
+                  onValueChange={(nextValue) =>
+                    setAsset({ ...asset, currency: nextValue })
                   }
                 >
                   {currencies.map((c) => (
-                    <option key={c}>{c}</option>
+                    <SelectItem key={c}>{c}</SelectItem>
                   ))}
-                </select>
+                </Select>
               </label>
             </div>
           ) : (
@@ -175,22 +177,23 @@ export function FinancialRecordEditor({
               </label>
               <label>
                 Type
-                <select
+                <Select
+                  aria-label="Type"
                   value={transaction.type}
                   disabled={
                     state.kind === 'transaction' &&
                     state.record?.source === 'OS'
                   }
-                  onChange={(e) =>
+                  onValueChange={(nextValue) =>
                     setTransaction({
                       ...transaction,
-                      type: e.target.value as 'INCOME' | 'EXPENSE',
+                      type: nextValue as 'INCOME' | 'EXPENSE',
                     })
                   }
                 >
-                  <option value="INCOME">Income</option>
-                  <option value="EXPENSE">Expense</option>
-                </select>
+                  <SelectItem value="INCOME">Income</SelectItem>
+                  <SelectItem value="EXPENSE">Expense</SelectItem>
+                </Select>
               </label>
               <label>
                 Description
@@ -230,16 +233,17 @@ export function FinancialRecordEditor({
               </label>
               <label>
                 Currency
-                <select
+                <Select
+                  aria-label="Currency"
                   value={transaction.currency}
-                  onChange={(e) =>
-                    setTransaction({ ...transaction, currency: e.target.value })
+                  onValueChange={(nextValue) =>
+                    setTransaction({ ...transaction, currency: nextValue })
                   }
                 >
                   {currencies.map((c) => (
-                    <option key={c}>{c}</option>
+                    <SelectItem key={c}>{c}</SelectItem>
                   ))}
-                </select>
+                </Select>
               </label>
               <label>
                 Vendor (optional)

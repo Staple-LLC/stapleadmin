@@ -1,3 +1,4 @@
+import { chooseSelectValue } from '../test-utils/select';
 // @vitest-environment jsdom
 import {
   cleanup,
@@ -112,6 +113,7 @@ function mount() {
 const collectedCard = () =>
   screen.getByRole('button', { name: /^Sales collected/ });
 beforeEach(() => {
+  sessionStorage.clear();
   vi.clearAllMocks();
   mock.animations.length = 0;
   mock.financialOverview.mockImplementation(async (params: URLSearchParams) => {
@@ -218,9 +220,10 @@ it('applies the server reporting dates and currency to transactions and resets p
   await waitFor(() =>
     expect(mock.trackerTransactions.mock.lastCall?.[0].get('page')).toBe('1'),
   );
-  fireEvent.change(screen.getByRole('combobox', { name: 'Reporting period' }), {
-    target: { value: 'year' },
-  });
+  await chooseSelectValue(
+    screen.getByRole('combobox', { name: 'Reporting period' }),
+    'year',
+  );
   await waitFor(() =>
     expect(mock.trackerTransactions.mock.lastCall?.[0].get('from')).toBe(
       '2026-01-01',
@@ -230,9 +233,9 @@ it('applies the server reporting dates and currency to transactions and resets p
     '2026-12-31',
   );
   expect(mock.trackerTransactions.mock.lastCall?.[0].get('page')).toBe('0');
-  fireEvent.change(
+  await chooseSelectValue(
     screen.getByRole('combobox', { name: 'Dashboard currency' }),
-    { target: { value: 'SGD' } },
+    'SGD',
   );
   await waitFor(() =>
     expect(mock.trackerTransactions.mock.lastCall?.[0].get('currency')).toBe(
@@ -252,9 +255,10 @@ it('applies the server reporting dates and currency to transactions and resets p
 it('uses inclusive custom dates for every request and removes date limits for All time', async () => {
   mount();
   await screen.findByRole('button', { name: /^Sales collected/ });
-  fireEvent.change(screen.getByRole('combobox', { name: 'Reporting period' }), {
-    target: { value: 'custom' },
-  });
+  await chooseSelectValue(
+    screen.getByRole('combobox', { name: 'Reporting period' }),
+    'custom',
+  );
   fireEvent.change(screen.getByLabelText('Reporting start date'), {
     target: { value: '2025-09-01' },
   });
@@ -276,9 +280,10 @@ it('uses inclusive custom dates for every request and removes date limits for Al
     '2025-09-30',
   );
   expect(screen.getByText(/1 Sept 2025.*30 Sept 2025/)).toBeTruthy();
-  fireEvent.change(screen.getByRole('combobox', { name: 'Reporting period' }), {
-    target: { value: 'all' },
-  });
+  await chooseSelectValue(
+    screen.getByRole('combobox', { name: 'Reporting period' }),
+    'all',
+  );
   await waitFor(() =>
     expect(mock.trackerTransactions.mock.lastCall?.[0].has('from')).toBe(false),
   );
@@ -288,9 +293,10 @@ it('uses inclusive custom dates for every request and removes date limits for Al
 it('does not request a reversed custom date range', async () => {
   mount();
   await screen.findByRole('button', { name: /^Sales collected/ });
-  fireEvent.change(screen.getByRole('combobox', { name: 'Reporting period' }), {
-    target: { value: 'custom' },
-  });
+  await chooseSelectValue(
+    screen.getByRole('combobox', { name: 'Reporting period' }),
+    'custom',
+  );
   fireEvent.change(screen.getByLabelText('Reporting end date'), {
     target: { value: '2020-01-01' },
   });
@@ -311,9 +317,10 @@ it('filters transactions without changing chart totals and respects reduced moti
   );
   mount();
   await screen.findByRole('button', { name: /^Sales collected/ });
-  fireEvent.change(screen.getByRole('combobox', { name: 'Transaction type' }), {
-    target: { value: 'EXPENSE' },
-  });
+  await chooseSelectValue(
+    screen.getByRole('combobox', { name: 'Transaction type' }),
+    'EXPENSE',
+  );
   fireEvent.change(
     screen.getByRole('textbox', { name: 'Search transactions' }),
     { target: { value: 'personally' } },
@@ -363,4 +370,30 @@ it('offers a retry when financial data cannot be loaded', async () => {
   await screen.findByRole('alert');
   fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
   await screen.findByRole('button', { name: /^Sales collected/ });
+});
+
+it('requests sandbox totals only while the test toggle is enabled', async () => {
+  mount();
+  await screen.findByRole('button', { name: /^Sales collected/ });
+  expect(
+    mock.financialOverview.mock.lastCall?.[0].has('includeTestPayments'),
+  ).toBe(false);
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Include test payments' }),
+  );
+  await waitFor(() =>
+    expect(
+      mock.financialOverview.mock.lastCall?.[0].get('includeTestPayments'),
+    ).toBe('true'),
+  );
+  expect(screen.getByText(/Sandbox preview: totals/).textContent).toContain(
+    'Sandbox preview',
+  );
+  fireEvent.click(
+    screen.getByRole('checkbox', { name: 'Include test payments' }),
+  );
+  await waitFor(() =>
+    expect(screen.queryByText(/Sandbox preview: totals/)).toBeNull(),
+  );
+  expect(sessionStorage.getItem('staple-financial-test-preview')).toBe('false');
 });

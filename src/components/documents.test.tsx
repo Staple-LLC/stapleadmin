@@ -1,3 +1,4 @@
+import { chooseSelectValue } from '../test-utils/select';
 // @vitest-environment jsdom
 import {
   cleanup,
@@ -100,9 +101,10 @@ it('rejects non-PDF filenames without sending a request', async () => {
 it('filters the library and includes its record link in each request', async () => {
   mount();
   await screen.findByText('Your paperwork starts here');
-  fireEvent.change(screen.getByRole('combobox', { name: 'Filter PDF type' }), {
-    target: { value: 'INVOICE' },
-  });
+  await chooseSelectValue(
+    screen.getByRole('combobox', { name: 'Filter PDF type' }),
+    'INVOICE',
+  );
   fireEvent.change(screen.getByRole('textbox', { name: 'Search PDFs' }), {
     target: { value: 'hosting' },
   });

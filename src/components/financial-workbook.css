@@ -17,7 +17,7 @@
 .workbook-page-actions label {
   font-size: 10px;
 }
-.workbook-page-actions select {
+.workbook-page-actions .select-trigger {
   min-width: 180px;
   font-size: 11px;
 }
@@ -416,7 +416,7 @@
   .workbook-tabs button {
     padding: 13px 12px;
   }
-  .workbook-page-actions select {
+  .workbook-page-actions .select-trigger {
     min-width: 170px;
   }
 }
@@ -447,7 +447,7 @@
   flex: 1;
 }
 .sheet-grid td > input,
-.sheet-grid td > select,
+.sheet-grid td .select-trigger,
 .sheet-grid td > textarea {
   display: block;
   width: 100%;
@@ -474,7 +474,7 @@
   align-items: center;
   gap: 12px;
 }
-.finance-period-controls .period-select select {
+.finance-period-controls .period-select .select-trigger {
   min-width: 100px;
 }
 @media (max-width: 700px) {
@@ -486,7 +486,7 @@
     flex: 1;
     min-width: 110px;
   }
-  .workbook-page-actions select {
+  .workbook-page-actions .select-trigger {
     min-width: 0;
   }
   .workbook-page-actions > button {

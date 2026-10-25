@@ -1,3 +1,8 @@
+import {
+  FinancialPreviewToggle,
+  useFinancialPreview,
+} from '../lib/financial-preview';
+import { Select, SelectItem } from './ui/select';
 import { useEffect, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -35,6 +40,7 @@ import './financial-workbook.css';
 
 type Position = { row: number; col: number };
 export default function FinancialWorkbookPage() {
+  const [includeTestPayments] = useFinancialPreview();
   const [year, setYear] = useState('');
   const [currency, setCurrency] = useState('MYR');
   const [editor, setEditor] = useState<RecordEditorState | null>(null);
@@ -43,14 +49,16 @@ export default function FinancialWorkbookPage() {
   const [years, setYears] = useState<number[]>([]);
   const [tab, setTab] = useState('transactions');
   const query = useQuery({
-    queryKey: ['financial-workbook', year, currency],
+    queryKey: ['financial-workbook', year, currency, includeTestPayments],
     refetchInterval: 15000,
-    queryFn: () => api.financialWorkbook(year, currency),
+    queryFn: () => api.financialWorkbook(year, currency, includeTestPayments),
   });
   useEffect(() => {
     if (query.data) setYears(query.data.summary.years);
   }, [query.data]);
-  const sheets = query.data ? buildFinancialSheets(query.data) : [];
+  const sheets = query.data
+    ? buildFinancialSheets(query.data, includeTestPayments)
+    : [];
   const sheet = sheets.find((s) => s.id === tab) ?? sheets[0];
   async function commit(row: SheetRow, field: string, value: string) {
     try {
@@ -82,6 +90,7 @@ export default function FinancialWorkbookPage() {
   }
   return (
     <main className="page financial-records-page">
+      <FinancialPreviewToggle />
       <div className="page-heading">
         <div>
           <p className="eyebrow">A FAMILIAR WAY TO SEE YOUR NUMBERS</p>
@@ -97,33 +106,33 @@ export default function FinancialWorkbookPage() {
           </NavLink>
           <label>
             Currency
-            <select
+            <Select
               aria-label="Financial currency"
               value={currency}
-              onChange={(event) => {
-                setCurrency(event.target.value);
+              onValueChange={(nextValue) => {
+                setCurrency(nextValue);
                 setYear('');
               }}
             >
               {currencies.map((c) => (
-                <option key={c}>{c}</option>
+                <SelectItem key={c}>{c}</SelectItem>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             Reporting period
-            <select
+            <Select
               aria-label="Workbook reporting period"
               value={year}
-              onChange={(event) => setYear(event.target.value)}
+              onValueChange={(nextValue) => setYear(nextValue)}
             >
-              <option value="">All recorded history</option>
+              <SelectItem value="">All recorded history</SelectItem>
               {years.map((value) => (
-                <option key={value} value={value}>
+                <SelectItem key={value} value={value}>
                   {value}
-                </option>
+                </SelectItem>
               ))}
-            </select>
+            </Select>
           </label>
           <Button
             onClick={() =>
@@ -138,7 +147,7 @@ export default function FinancialWorkbookPage() {
       <div className="workbook-context">
         <span>
           <FileSpreadsheet size={15} />
-          Live financial records
+          {includeTestPayments ? 'Sandbox preview' : 'Live financial records'}
           {query.data?.summary.source && (
             <span className="workbook-source-name">
               {' '}
@@ -177,7 +186,7 @@ export default function FinancialWorkbookPage() {
             </p>
           )}
           <WorkbookGrid
-            key={`${year}-${currency}-${sheet.id}`}
+            key={`${year}-${currency}-${includeTestPayments}-${sheet.id}`}
             sheet={sheet}
             onCommit={commit}
             onEditRow={editRow}
@@ -632,22 +641,25 @@ export function WorkbookGrid({
                         {editing?.row.number === r.number &&
                         editing.col === col ? (
                           editing.field === 'type' ? (
-                            <select
+                            <Select
                               autoFocus
                               aria-label="Edit cell value"
                               disabled={busy}
                               value={editing.value}
-                              onChange={(e) =>
+                              onValueChange={(nextValue) =>
                                 setEditing({
                                   ...editing,
-                                  value: e.target.value,
+                                  value: nextValue,
                                 })
                               }
-                              onKeyDown={editorKeys}
+                              onKeyDown={(event) => {
+                                event.stopPropagation();
+                                if (event.key === 'Escape') editorKeys(event);
+                              }}
                             >
-                              <option value="INCOME">Income</option>
-                              <option value="EXPENSE">Expense</option>
-                            </select>
+                              <SelectItem value="INCOME">Income</SelectItem>
+                              <SelectItem value="EXPENSE">Expense</SelectItem>
+                            </Select>
                           ) : editing.field === 'notes' ? (
                             <textarea
                               autoFocus

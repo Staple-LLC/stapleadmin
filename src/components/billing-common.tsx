@@ -1,3 +1,4 @@
+import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -142,25 +143,26 @@ export function BillingCustomerSelect({
       </label>
       <label>
         Customer
-        <select
+        <Select
+          aria-label="Customer"
           required
           disabled={disabled || customers.isPending}
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onValueChange={(nextValue) => onChange(nextValue)}
         >
-          <option value="">Choose a customer</option>
+          <SelectItem value="">Choose a customer</SelectItem>
           {selected.data &&
             !rows.some((row) => row.id === selected.data.id) && (
-              <option value={selected.data.id}>
+              <SelectItem value={selected.data.id}>
                 {selected.data.businessName}
-              </option>
+              </SelectItem>
             )}
           {rows.map((row) => (
-            <option key={row.id} value={row.id}>
+            <SelectItem key={row.id} value={row.id}>
               {row.businessName}
-            </option>
+            </SelectItem>
           ))}
-        </select>
+        </Select>
       </label>
       {customers.error && (
         <p className="error" role="alert">

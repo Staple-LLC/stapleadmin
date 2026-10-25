@@ -420,9 +420,13 @@ export const api = {
     request<TrackerSummary>(
       `/dashboard/tracker?${new URLSearchParams({ currency, ...(year ? { year } : {}) })}`,
     ),
-  financialWorkbook: (year: string, currency = 'MYR') =>
+  financialWorkbook: (
+    year: string,
+    currency = 'MYR',
+    includeTestPayments = false,
+  ) =>
     request<FinancialWorkbook>(
-      `/dashboard/tracker/workbook?${new URLSearchParams({ currency, ...(year ? { year } : {}) })}`,
+      `/dashboard/tracker/workbook?${new URLSearchParams({ currency, ...(year ? { year } : {}), ...(includeTestPayments ? { includeTestPayments: 'true' } : {}) })}`,
     ),
   financialRecords: {
     create: (data: FinancialTransactionInput) =>

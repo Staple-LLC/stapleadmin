@@ -1,3 +1,4 @@
+import { chooseSelectValue } from '../test-utils/select';
 // @vitest-environment jsdom
 import {
   cleanup,
@@ -198,20 +199,15 @@ it('creates a quoted annual domain service with an explicit collection mode and 
   mount('/billing?customerId=customer-1');
   await screen.findByText('Acme website');
   fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
-  await screen.findByRole('option', { name: /Annual domain management/ });
-  fireEvent.change(screen.getByLabelText('Plan'), {
-    target: { value: 'plan-domain' },
-  });
+  await chooseSelectValue(screen.getByLabelText('Plan'), 'plan-domain');
   fireEvent.change(screen.getByLabelText('Agreed annual price (MYR)'), {
     target: { value: '120.00' },
   });
-  await screen.findByRole('option', { name: /acme.com/ });
-  fireEvent.change(screen.getByLabelText('Domain'), {
-    target: { value: 'domain-1' },
-  });
-  fireEvent.change(screen.getByLabelText('How the customer pays'), {
-    target: { value: 'AUTO_CARD' },
-  });
+  await chooseSelectValue(screen.getByLabelText('Domain'), 'domain-1');
+  await chooseSelectValue(
+    screen.getByLabelText('How the customer pays'),
+    'AUTO_CARD',
+  );
   fireEvent.change(screen.getByLabelText('First billing date (optional)'), {
     target: { value: '2027-09-24' },
   });
@@ -312,9 +308,7 @@ it('issues a bank transfer invoice without creating a payment or checkout', asyn
 it('keeps customer and status filters in payment requests and preserves the invoice tab', async () => {
   mount('/billing?tab=payments&customerId=customer-1');
   await screen.findByText('No payments yet');
-  fireEvent.change(screen.getByLabelText('Payment status'), {
-    target: { value: 'FAILED' },
-  });
+  await chooseSelectValue(screen.getByLabelText('Payment status'), 'FAILED');
   fireEvent.change(screen.getByLabelText('Search payments'), {
     target: { value: 'Acme' },
   });
@@ -408,10 +402,7 @@ it('rejects a first automatic charge date too soon for Stripe before creating a 
   mount('/billing?customerId=customer-1');
   await screen.findByText('Acme website');
   fireEvent.click(screen.getByRole('button', { name: 'Add service' }));
-  await screen.findByRole('option', { name: /Managed website —/ });
-  fireEvent.change(screen.getByLabelText('Plan'), {
-    target: { value: 'plan-1' },
-  });
+  await chooseSelectValue(screen.getByLabelText('Plan'), 'plan-1');
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000)
     .toISOString()
     .slice(0, 10);

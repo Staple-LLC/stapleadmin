@@ -1,3 +1,4 @@
+import { Select, SelectItem } from './ui/select';
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../lib/api';
@@ -50,19 +51,20 @@ export function CustomerPortal({
         <>
           <label className="mb-6">
             Business
-            <select
+            <Select
+              aria-label="Business"
               value={customerId}
-              onChange={(event) => {
-                setCustomerId(event.target.value);
+              onValueChange={(nextValue) => {
+                setCustomerId(nextValue);
                 setPage(0);
               }}
             >
               {profile.customers.map((customer) => (
-                <option key={customer.id} value={customer.id}>
+                <SelectItem key={customer.id} value={customer.id}>
                   {customer.businessName}
-                </option>
+                </SelectItem>
               ))}
-            </select>
+            </Select>
           </label>
           <h2 className="mb-4">Invoices</h2>
           {query.isLoading && <p role="status">Loading invoices…</p>}

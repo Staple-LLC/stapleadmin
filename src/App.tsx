@@ -1,3 +1,4 @@
+import { Select, SelectItem } from './components/ui/select';
 import {
   createContext,
   lazy,
@@ -710,51 +711,51 @@ function Records({
           </div>
           <div className="filters">
             {section === 'expenses' && (
-              <select
+              <Select
                 aria-label="Expense source"
                 value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
+                onValueChange={(nextValue) => {
+                  setStatus(nextValue);
                   setPage(0);
                 }}
               >
-                <option value="">All sources</option>
-                <option value="WORKBOOK">Imported workbook</option>
-                <option value="OS">Recorded in OS</option>
-              </select>
+                <SelectItem value="">All sources</SelectItem>
+                <SelectItem value="WORKBOOK">Imported workbook</SelectItem>
+                <SelectItem value="OS">Recorded in OS</SelectItem>
+              </Select>
             )}
             {stages[section].length > 0 && (
-              <select
+              <Select
                 aria-label="Filter by status"
                 value={status}
-                onChange={(e) => {
-                  setStatus(e.target.value);
+                onValueChange={(nextValue) => {
+                  setStatus(nextValue);
                   setPage(0);
                 }}
               >
-                <option value="">All statuses</option>
+                <SelectItem value="">All statuses</SelectItem>
                 {stages[section].map((s) => (
-                  <option key={s}>{s}</option>
+                  <SelectItem key={s}>{s}</SelectItem>
                 ))}
-              </select>
+              </Select>
             )}
-            <select
+            <Select
               aria-label="Sort records"
               value={sort}
-              onChange={(e) => {
-                setSort(e.target.value);
+              onValueChange={(nextValue) => {
+                setSort(nextValue);
                 setPage(0);
               }}
             >
-              <option value="createdAt,desc">Newest first</option>
-              <option value="createdAt,asc">Oldest first</option>
+              <SelectItem value="createdAt,desc">Newest first</SelectItem>
+              <SelectItem value="createdAt,asc">Oldest first</SelectItem>
               {section === 'expenses' && (
                 <>
-                  <option value="amount,desc">Largest amount</option>
-                  <option value="amount,asc">Smallest amount</option>
+                  <SelectItem value="amount,desc">Largest amount</SelectItem>
+                  <SelectItem value="amount,asc">Smallest amount</SelectItem>
                 </>
               )}
-            </select>
+            </Select>
           </div>
         </div>
         <ErrorMessage error={query.error} />
@@ -1276,23 +1277,24 @@ function CustomerSelect({
       </label>
       <label>
         Customer
-        <select
+        <Select
+          aria-label="Customer"
           required
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onValueChange={(nextValue) => onChange(nextValue)}
         >
-          <option value="">Select a customer</option>
+          <SelectItem value="">Select a customer</SelectItem>
           {value && !customers.data?.content.some((c) => c.id === value) && (
-            <option value={value}>
+            <SelectItem value={value}>
               Current customer ({value.slice(0, 8)})
-            </option>
+            </SelectItem>
           )}
           {customers.data?.content.map((c) => (
-            <option key={c.id} value={c.id}>
+            <SelectItem key={c.id} value={c.id}>
               {c.businessName}
-            </option>
+            </SelectItem>
           ))}
-        </select>
+        </Select>
       </label>
       <ErrorMessage error={customers.error} />
       {customers.data?.totalElements === 0 && (
@@ -1407,17 +1409,18 @@ function RecordForm({
           >
             {f.label}
             {f.options ? (
-              <select
+              <Select
+                aria-label={f.label}
                 required
                 value={String(data[f.name] ?? '')}
-                onChange={(e) => set(f.name, e.target.value)}
+                onValueChange={(nextValue) => set(f.name, nextValue)}
               >
                 {f.options.map((v) => (
-                  <option value={v} key={v}>
+                  <SelectItem value={v} key={v}>
                     {pretty(v)}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+              </Select>
             ) : f.type === 'textarea' ? (
               <textarea
                 rows={3}
@@ -1443,29 +1446,31 @@ function RecordForm({
         {stages[section].length > 0 && section !== 'invoices' && (
           <label>
             Status
-            <select
+            <Select
+              aria-label="Status"
               value={String(data.status)}
-              onChange={(e) => set('status', e.target.value)}
+              onValueChange={(nextValue) => set('status', nextValue)}
             >
               {stages[section].map((s) => (
-                <option key={s} value={s}>
+                <SelectItem key={s} value={s}>
                   {pretty(s)}
-                </option>
+                </SelectItem>
               ))}
-            </select>
+            </Select>
           </label>
         )}
         {['leads', 'invoices', 'expenses'].includes(section) && (
           <label>
             Currency
-            <select
+            <Select
+              aria-label="Currency"
               value={String(data.currency)}
-              onChange={(e) => set('currency', e.target.value)}
+              onValueChange={(nextValue) => set('currency', nextValue)}
             >
               {['MYR', 'USD', 'SGD', 'EUR', 'GBP', 'AUD'].map((c) => (
-                <option key={c}>{c}</option>
+                <SelectItem key={c}>{c}</SelectItem>
               ))}
-            </select>
+            </Select>
           </label>
         )}
         {section === 'websites' && (

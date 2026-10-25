@@ -1,3 +1,8 @@
+import {
+  FinancialPreviewToggle,
+  useFinancialPreview,
+} from '../lib/financial-preview';
+import { Select, SelectItem } from './ui/select';
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -84,6 +89,7 @@ export function useReducedMotion() {
 }
 
 export default function FinancialDashboard() {
+  const [includeTestPayments] = useFinancialPreview();
   const [period, setPeriod] = useState<FinancialOverview['period']>('month');
   const [selectedCurrency, setCurrency] = useState(() => {
     const requested =
@@ -97,6 +103,7 @@ export default function FinancialDashboard() {
   const invalidRange = period === 'custom' && (!from || !to || from > to);
   const params = new URLSearchParams({
     period,
+    ...(includeTestPayments ? { includeTestPayments: 'true' } : {}),
     currency: selectedCurrency,
     ...(period === 'custom' ? { from, to } : {}),
   });
@@ -108,6 +115,7 @@ export default function FinancialDashboard() {
   });
   return (
     <section className="financial-dashboard" aria-label="Financial dashboard">
+      <FinancialPreviewToggle />
       <div className="page-heading finance-heading">
         <div>
           <p className="eyebrow">YOUR BUSINESS, IN PERSPECTIVE</p>
@@ -119,30 +127,30 @@ export default function FinancialDashboard() {
         <div className="finance-period-controls">
           <label className="period-select">
             <span>Reporting period</span>
-            <select
+            <Select
               aria-label="Reporting period"
               value={period}
-              onChange={(e) =>
-                setPeriod(e.target.value as FinancialOverview['period'])
+              onValueChange={(nextValue) =>
+                setPeriod(nextValue as FinancialOverview['period'])
               }
             >
-              <option value="month">This month</option>
-              <option value="year">This year</option>
-              <option value="all">All time</option>
-              <option value="custom">Custom dates</option>
-            </select>
+              <SelectItem value="month">This month</SelectItem>
+              <SelectItem value="year">This year</SelectItem>
+              <SelectItem value="all">All time</SelectItem>
+              <SelectItem value="custom">Custom dates</SelectItem>
+            </Select>
           </label>
           <label className="period-select">
             <span>Currency</span>
-            <select
+            <Select
               aria-label="Dashboard currency"
               value={selectedCurrency}
-              onChange={(e) => setCurrency(e.target.value)}
+              onValueChange={(nextValue) => setCurrency(nextValue)}
             >
               {currencies.map((c) => (
-                <option key={c}>{c}</option>
+                <SelectItem key={c}>{c}</SelectItem>
               ))}
-            </select>
+            </Select>
           </label>
         </div>
       </div>
@@ -195,6 +203,7 @@ export default function FinancialDashboard() {
 }
 
 export function FinancialReport({ overview }: { overview: FinancialOverview }) {
+  const [includeTestPayments] = useFinancialPreview();
   const data = overview.summary;
   const currency = overview.currency;
   const formatMYR = (value: string | number) =>
@@ -278,7 +287,7 @@ export function FinancialReport({ overview }: { overview: FinancialOverview }) {
       <div className="source-strip">
         <span>
           <span className="source-dot" />
-          Live financial records
+          {includeTestPayments ? 'Sandbox preview' : 'Live financial records'}
           <span className="source-separator">/</span>
           {period}
         </span>
@@ -753,7 +762,9 @@ function Transactions({
     }, 250);
     return () => clearTimeout(timer);
   }, [search]);
+  const [includeTestPayments] = useFinancialPreview();
   const params = new URLSearchParams({
+    ...(includeTestPayments ? { includeTestPayments: 'true' } : {}),
     ...(from ? { from } : {}),
     ...(to ? { to } : {}),
     page: String(page),
@@ -794,31 +805,31 @@ function Transactions({
           />
         </label>
         <div>
-          <select
+          <Select
             aria-label="Transaction type"
             value={type}
-            onChange={(e) => {
-              setType(e.target.value);
+            onValueChange={(nextValue) => {
+              setType(nextValue);
               setPage(0);
             }}
           >
-            <option value="">All transactions</option>
-            <option value="INCOME">Income</option>
-            <option value="EXPENSE">Expenses</option>
-          </select>
-          <select
+            <SelectItem value="">All transactions</SelectItem>
+            <SelectItem value="INCOME">Income</SelectItem>
+            <SelectItem value="EXPENSE">Expenses</SelectItem>
+          </Select>
+          <Select
             aria-label="Sort transactions"
             value={sort}
-            onChange={(e) => {
-              setSort(e.target.value);
+            onValueChange={(nextValue) => {
+              setSort(nextValue);
               setPage(0);
             }}
           >
-            <option value="date,desc">Newest first</option>
-            <option value="date,asc">Oldest first</option>
-            <option value="amount,desc">Largest amount</option>
-            <option value="amount,asc">Smallest amount</option>
-          </select>
+            <SelectItem value="date,desc">Newest first</SelectItem>
+            <SelectItem value="date,asc">Oldest first</SelectItem>
+            <SelectItem value="amount,desc">Largest amount</SelectItem>
+            <SelectItem value="amount,asc">Smallest amount</SelectItem>
+          </Select>
         </div>
       </div>
       {query.isError ? (
@@ -837,7 +848,10 @@ function Transactions({
           <div className="finance-table-scroll">
             <table>
               <caption className="sr-only">
-                Live financial transactions in {currency}
+                {includeTestPayments
+                  ? 'Sandbox preview transactions'
+                  : 'Live financial transactions'}{' '}
+                in {currency}
               </caption>
               <thead>
                 <tr>

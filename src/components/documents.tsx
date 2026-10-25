@@ -1,3 +1,4 @@
+import { Select, SelectItem } from './ui/select';
 import { useId, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -253,14 +254,15 @@ export function DocumentFiles({
         </div>
         <label className="document-kind">
           Document type
-          <select
+          <Select
+            aria-label="Document type"
             value={kind}
             disabled={uploading}
-            onChange={(event) => setKind(event.target.value as typeof kind)}
+            onValueChange={(nextValue) => setKind(nextValue as typeof kind)}
           >
-            <option value="INVOICE">Invoice</option>
-            <option value="RECEIPT">Receipt</option>
-          </select>
+            <SelectItem value="INVOICE">Invoice</SelectItem>
+            <SelectItem value="RECEIPT">Receipt</SelectItem>
+          </Select>
         </label>
         <Button type="submit" disabled={uploading || !file}>
           <Upload size={15} />
@@ -296,18 +298,18 @@ export function DocumentFiles({
               }}
             />
           </label>
-          <select
+          <Select
             aria-label="Filter PDF type"
             value={filter}
-            onChange={(event) => {
-              setFilter(event.target.value);
+            onValueChange={(nextValue) => {
+              setFilter(nextValue);
               setPage(0);
             }}
           >
-            <option value="">All PDFs</option>
-            <option value="INVOICE">Invoices</option>
-            <option value="RECEIPT">Receipts</option>
-          </select>
+            <SelectItem value="">All PDFs</SelectItem>
+            <SelectItem value="INVOICE">Invoices</SelectItem>
+            <SelectItem value="RECEIPT">Receipts</SelectItem>
+          </Select>
         </div>
         {query.isPending ? (
           <p className="document-state" role="status">

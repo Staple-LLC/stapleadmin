@@ -25,14 +25,14 @@
 }
 button,
 input,
-select,
+.select-trigger,
 textarea {
   font: inherit;
 }
 button,
 a,
 input,
-select,
+.select-trigger,
 textarea {
   -webkit-tap-highlight-color: transparent;
 }
@@ -386,7 +386,7 @@ header strong {
   display: flex;
   gap: 9px;
 }
-.filters select {
+.filters .select-trigger {
   font-size: 11px;
   color: #748077;
   padding: 7px 10px;
@@ -496,7 +496,7 @@ label {
 }
 label input,
 label textarea,
-label select {
+label .select-trigger {
   border: 1px solid #dce4de;
   background: #fff;
   border-radius: 6px;
@@ -510,7 +510,7 @@ label select {
 }
 label input:focus,
 label textarea:focus,
-label select:focus {
+label .select-trigger:focus {
   border-color: #73967d;
   box-shadow: 0 0 0 2px #eaf1ec;
 }
@@ -761,7 +761,7 @@ label select:focus {
   .filters {
     width: 100%;
   }
-  .filters select {
+  .filters .select-trigger {
     flex: 1;
     max-width: none;
   }
@@ -840,7 +840,32 @@ label select:focus {
   .expenses-page .page-heading {
     flex-wrap: wrap;
   }
-  .expenses-page .filters select {
+  .expenses-page .filters .select-trigger {
     min-width: 0;
   }
+}
+
+.financial-preview {
+  margin-bottom: 18px;
+  padding: 12px 16px;
+  border: 1px solid #e1d4ad;
+  border-radius: 8px;
+  background: #fffaf0;
+}
+.financial-preview label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.financial-preview input {
+  width: 16px;
+  height: 16px;
+  accent-color: #466b52;
+}
+.financial-preview p {
+  margin: 8px 0 0;
+  color: #795b23;
+  font-size: 13px;
 }
