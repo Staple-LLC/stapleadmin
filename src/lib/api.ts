@@ -338,6 +338,26 @@ function resource<T, I>(name: string) {
 }
 export const api = {
   billing: {
+    receipt: async (
+      sessionId: string,
+    ): Promise<{
+      status: 'READY' | 'PENDING' | 'NO_PAYMENT';
+      url: string | null;
+    }> => {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/billing/checkout/receipt?${new URLSearchParams({ sessionId })}`,
+        {
+          cache: 'no-store',
+          credentials: 'omit',
+          referrerPolicy: 'no-referrer',
+        },
+      );
+      if (!response.ok)
+        throw new Error(
+          'The receipt could not be loaded. Please retry or contact your service provider.',
+        );
+      return response.json();
+    },
     config: () => request<BillingConfig>('/billing/config'),
     plans: resource<BillingPlan, BillingPlanInput>('billing/plans'),
     services: resource<BillingService, BillingServiceInput>('billing/services'),

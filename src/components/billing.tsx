@@ -1558,9 +1558,37 @@ function PlanEditor({
 }
 export function BillingReturn() {
   const [params] = useSearchParams();
+  const sessionId = params.get('session_id') ?? '';
   const portal = params.get('status') === 'portal';
   const cancelled =
     params.get('status') === 'cancelled' || params.get('status') === 'cancel';
+  const receipt = useQuery({
+    queryKey: ['checkout-receipt', sessionId],
+    queryFn: () => api.billing.receipt(sessionId),
+    enabled: !!sessionId && !portal && !cancelled,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchInterval: (query) =>
+      query.state.data?.status === 'PENDING' && query.state.dataUpdateCount < 12
+        ? 3000
+        : false,
+  });
+  const receiptUrl = receipt.data?.url;
+  const safeReceiptUrl =
+    receiptUrl &&
+    (() => {
+      try {
+        const url = new URL(receiptUrl);
+        return (
+          url.protocol === 'https:' &&
+          url.hostname === 'pay.stripe.com' &&
+          !url.username &&
+          !url.password
+        );
+      } catch {
+        return false;
+      }
+    })();
   return (
     <main className="billing-return">
       <div>
@@ -1579,6 +1607,42 @@ export function BillingReturn() {
               ? 'Your checkout was not completed. You can return to your original payment link when you are ready.'
               : 'Your checkout has been received. Payment confirmation comes from Stripe and may take a moment. Your provider will follow up if anything else is needed.'}
         </p>
+        {!portal && !cancelled && sessionId && (
+          <div className="billing-receipt">
+            {receipt.data?.status === 'READY' && safeReceiptUrl ? (
+              <a
+                className="billing-receipt-link"
+                href={receiptUrl!}
+                target="_blank"
+                rel="noopener noreferrer"
+                referrerPolicy="no-referrer"
+              >
+                <ExternalLink size={16} /> View receipt
+              </a>
+            ) : receipt.data?.status === 'NO_PAYMENT' ? (
+              <p>
+                No payment was due at checkout. A receipt will be available
+                after a payment is collected.
+              </p>
+            ) : (
+              <>
+                <p role="status">
+                  {receipt.isError
+                    ? 'The receipt could not be loaded. Please retry or contact your service provider.'
+                    : 'Your receipt will appear here once Stripe confirms the payment.'}
+                </p>
+                <Button
+                  onClick={() => receipt.refetch()}
+                  disabled={receipt.isFetching}
+                >
+                  {receipt.isFetching
+                    ? 'Checking receipt…'
+                    : 'Check for receipt'}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
         <p className="muted">
           You can close this page. No Staple OS account is required.
         </p>

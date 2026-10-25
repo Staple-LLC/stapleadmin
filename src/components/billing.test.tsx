@@ -15,6 +15,7 @@ import BillingPage, { BillingReturn } from './billing';
 import { BillingDomains } from './billing-domains';
 const mock = vi.hoisted(() => ({
   config: vi.fn(),
+  receipt: vi.fn(),
   serviceList: vi.fn(),
   serviceGet: vi.fn(),
   serviceCreate: vi.fn(),
@@ -38,6 +39,7 @@ vi.mock('../lib/api', () => ({
     customers: { list: mock.customers, get: mock.customer },
     billing: {
       config: mock.config,
+      receipt: mock.receipt,
       services: {
         list: mock.serviceList,
         get: mock.serviceGet,
@@ -423,4 +425,54 @@ it('refreshes billing records on request', async () => {
   await waitFor(() =>
     expect(mock.serviceList.mock.calls.length).toBeGreaterThan(before),
   );
+});
+
+it('shows a Stripe receipt link after verifying the checkout session', async () => {
+  mock.receipt.mockResolvedValue({
+    status: 'READY',
+    url: 'https://pay.stripe.com/receipts/payment/test',
+  });
+  mount(
+    '/billing-return?status=complete&session_id=cs_test_receipt',
+    <BillingReturn />,
+  );
+  const link = await screen.findByRole('link', { name: 'View receipt' });
+  expect(link.getAttribute('href')).toBe(
+    'https://pay.stripe.com/receipts/payment/test',
+  );
+  expect(link.getAttribute('rel')).toContain('noreferrer');
+  expect(mock.receipt).toHaveBeenCalledWith('cs_test_receipt');
+  expect(mock.serviceList).not.toHaveBeenCalled();
+});
+it('waits for a pending receipt and allows a retry', async () => {
+  mock.receipt
+    .mockResolvedValueOnce({ status: 'PENDING', url: null })
+    .mockResolvedValueOnce({
+      status: 'READY',
+      url: 'https://pay.stripe.com/receipts/payment/test',
+    });
+  mount(
+    '/billing-return?status=complete&session_id=cs_pending',
+    <BillingReturn />,
+  );
+  fireEvent.click(
+    await screen.findByRole('button', { name: 'Check for receipt' }),
+  );
+  await screen.findByRole('link', { name: 'View receipt' });
+});
+it('explains when checkout collected no payment and does not invent a receipt', async () => {
+  mock.receipt.mockResolvedValue({ status: 'NO_PAYMENT', url: null });
+  mount(
+    '/billing-return?status=complete&session_id=cs_trial',
+    <BillingReturn />,
+  );
+  await screen.findByText(/No payment was due at checkout/);
+  expect(screen.queryByRole('link', { name: 'View receipt' })).toBeNull();
+});
+it('does not load a receipt when checkout was cancelled', () => {
+  mount(
+    '/billing-return?status=cancelled&session_id=cs_cancelled',
+    <BillingReturn />,
+  );
+  expect(mock.receipt).not.toHaveBeenCalled();
 });

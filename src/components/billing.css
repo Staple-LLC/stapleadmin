@@ -610,3 +610,27 @@
     font-size: 11px;
   }
 }
+
+.billing-receipt {
+  margin: 20px 0;
+}
+.billing-receipt-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 7px;
+  background: #254f3f;
+  color: white;
+  text-decoration: none;
+  font-weight: 500;
+}
+.billing-return .billing-receipt-link svg {
+  color: inherit;
+  margin: 0;
+}
+.billing-receipt-link:focus-visible {
+  outline: 3px solid #83b99d;
+  outline-offset: 3px;
+}
