@@ -1,5 +1,7 @@
 # Staple OS frontend
 
+For Vercel deployments, the root `vercel.json` rewrites direct page requests to `index.html` so React Router can handle `/billing-return`, `/auth/reset`, and workspace routes. Set `VITE_API_BASE_URL=https://api.staplesoftware.com` in the Vercel build environment, then redeploy after configuration changes. The frontend rewrite does not proxy API requests to Spring Boot.
+
 React + TypeScript + Vite, Tailwind CSS, shadcn/ui primitives (Radix), and TanStack Query. The sibling `../stapleadmin-backend` is a Java 21 / Spring Boot modular monolith. Both repositories were empty at the start of this implementation.
 
 ## Run locally
