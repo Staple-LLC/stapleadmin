@@ -1,3 +1,4 @@
+import { PaymentLink } from './components/payment-link';
 import { ProjectSelect } from './components/project-select';
 import { BillingCustomerSelect } from './components/billing-common';
 import { useDebouncedValue } from './lib/use-debounced-value';
@@ -170,6 +171,8 @@ function ErrorMessage({ error }: { error: unknown }) {
 }
 export default function App() {
   const location = useLocation();
+  if (location.pathname.startsWith('/pay/'))
+    return <PaymentLink token={location.pathname.slice(5)} />;
   return location.pathname === '/billing-return' ? (
     <Suspense fallback={<p role="status">Loading checkout status…</p>}>
       <BillingReturn />

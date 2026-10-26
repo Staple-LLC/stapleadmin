@@ -389,6 +389,23 @@ export const api = {
       request<void>(`/projects/${id}/costs/${expenseId}`, { method: 'DELETE' }),
   },
   billing: {
+    paymentLink: async (
+      token: string,
+    ): Promise<{
+      status: 'READY' | 'COMPLETED' | 'EXPIRED' | 'UNAVAILABLE';
+      url: string | null;
+    }> => {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL ?? ''}/api/v1/billing/pay/${encodeURIComponent(token)}`,
+        {
+          cache: 'no-store',
+          credentials: 'omit',
+          referrerPolicy: 'no-referrer',
+        },
+      );
+      if (!response.ok) throw new Error('Payment link unavailable');
+      return response.json();
+    },
     receipt: async (
       sessionId: string,
     ): Promise<{
